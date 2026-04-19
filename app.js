@@ -351,12 +351,6 @@ function fillProvinceSelect(select, regionKey, placeholder = 'Chọn tỉnh/thà
 }
 
 function render() {
-  const staticRequests = q('#root .requests-section');
-  if (staticRequests) {
-    state.requestsReady = true;
-    return;
-  }
-
   const app = q('#root .app') || q('#root');
   app.classList.add('app');
   app.innerHTML = '';
@@ -498,7 +492,6 @@ async function loadData() {
   const cachedDrivers = load('local_drivers_cache', []);
   const localRequests = initialDom.requests.length > cachedRequests.length ? initialDom.requests : cachedRequests;
   const localDrivers = initialDom.drivers.length > cachedDrivers.length ? initialDom.drivers : cachedDrivers;
-  if (localRequests.length && !state.requests.length) state.requests = localRequests;
 
   try {
     const requestsPromise = state.token
@@ -543,9 +536,11 @@ async function loadData() {
   state.requestsReady = false;
 
   render();
-  await loadData();
-  state.requestsReady = true;
-  render();
 
+  setTimeout(async () => {
+    await loadData();
+    state.requestsReady = true;
+    render();
+  }, 5000);
   window.DEBUG_APP = { state, loadData, render, setupAuthModal, paymentModal, persistLists };
 })();
