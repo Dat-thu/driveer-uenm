@@ -86,26 +86,7 @@ function getRegionByProvince(province) {
 }
 
 function parseInitialDataFromDom() {
-  const cards = [...document.querySelectorAll('#root .request-card')];
-  const requests = cards.map((card) => {
-    const name = card.querySelector('.request-name')?.textContent?.trim() || '';
-    const phoneText = card.querySelector('.request-phone')?.textContent?.replace(/^Số điện thoại khách hàng:\s*/i, '').trim() || '';
-    const routeText = card.querySelector('.request-route')?.textContent?.trim() || '';
-    const noteText = card.querySelector('.request-note')?.textContent?.replace(/^Ghi chú:\s*/i, '').trim() || '';
-    const priceText = card.querySelector('.request-price')?.textContent?.replace(/^Giá:\s*/i, '').trim() || '';
-    const [startPoint = '', endPoint = ''] = routeText.split(/\s*-?>\s*/);
-    return {
-      name,
-      phone: normalizePhone(phoneText),
-      startPoint: startPoint.trim(),
-      endPoint: endPoint.trim(),
-      note: noteText,
-      price: parsePrice(priceText),
-      region: getRegionByProvince(startPoint.trim() || endPoint.trim()),
-    };
-  }).filter((r) => r.name || r.phone || r.startPoint || r.endPoint);
-
-  return { requests, drivers: HTML_DRIVERS };
+  return { requests: [], drivers: HTML_DRIVERS };
 }
 
 function buildQrUrl(cfg = {}) {
