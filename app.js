@@ -47,6 +47,22 @@ const HTML_DRIVERS = [
   phoneDisplay: d.phone,
 }));
 
+const SEEDED_REQUESTS = [
+  { name: 'Anh Việt', phone: '0912345678', startPoint: 'Hà Nội', endPoint: 'Hải Phòng', note: 'Xe 4 chỗ nhận khách từ 5h sáng', price: 900000, region: 'north', status: 'waiting' },
+  { name: 'Anh Sơn', phone: '0987654321', startPoint: 'Hà Nội', endPoint: 'Quảng Ninh', note: 'Đi Hạ Long trong ngày, có thể ghép khách', price: 1200000, region: 'north', status: 'waiting' },
+  { name: 'Chị Hương', phone: '0971122334', startPoint: 'Bắc Ninh', endPoint: 'Ninh Bình', note: 'Xe 7 chỗ, chạy sáng và chiều', price: 1100000, region: 'north', status: 'waiting' },
+  { name: 'Anh Mạnh', phone: '0962233445', startPoint: 'Hà Nội', endPoint: 'Lào Cai', note: 'Nhận khách tuyến Sa Pa, tối xuất phát', price: 1500000, region: 'north', status: 'waiting' },
+  { name: 'Anh Trường', phone: '0945566778', startPoint: 'Hải Dương', endPoint: 'Hà Nội', note: 'Có mặt nhanh trong 30 phút', price: 700000, region: 'north', status: 'waiting' },
+  { name: 'Anh Phú', phone: '0936677889', startPoint: 'Đà Nẵng', endPoint: 'Huế', note: 'Xe 5 chỗ chạy liên tục cả ngày', price: 650000, region: 'central', status: 'waiting' },
+  { name: 'Chị Lan', phone: '0923344556', startPoint: 'Đà Nẵng', endPoint: 'Quảng Ngãi', note: 'Đón sân bay và nội thành', price: 850000, region: 'central', status: 'waiting' },
+  { name: 'Anh Khang', phone: '0915566779', startPoint: 'Nha Trang', endPoint: 'Đà Lạt', note: 'Xe gia đình 7 chỗ, nhận khách ghép', price: 900000, region: 'central', status: 'waiting' },
+  { name: 'Anh Huy', phone: '0907788991', startPoint: 'Quy Nhon', endPoint: 'Gia Lai', note: 'Chạy sáng sớm, nhận hàng nhẹ', price: 1000000, region: 'central', status: 'waiting' },
+  { name: 'Chị My', phone: '0898899001', startPoint: 'Thanh Hóa', endPoint: 'Nghệ An', note: 'Xe 4 chỗ, chạy tối hằng ngày', price: 600000, region: 'central', status: 'waiting' },
+].map((request, index) => ({
+  _id: `seed-req-${index + 1}`,
+  ...request,
+}));
+
 const state = {
   user: load('driver_user', null),
   token: localStorage.getItem('token') || '',
@@ -77,157 +93,12 @@ function fmtPhone(p) { return String(p || '').replace(/(\d{3})(\d{3})(\d{3,4})/,
 function initials(name) { return String(name || 'TX').trim().split(/\s+/).map((s) => s[0]).slice(0, 2).join('').toUpperCase() || 'TX'; }
 function normalizePhone(phone = '') { return String(phone).replace(/\D+/g, ''); }
 function parsePrice(text = '') { return Number(String(text).replace(/[^\d]/g, '')) || 0; }
-function normalizeProvinceName(text = '') {
-  return String(text || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/gi, 'd')
-    .replace(/[^a-z0-9]/gi, '')
-    .toLowerCase();
-}
-
-function normalizeRequestKeyPart(value = '') {
-  return String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/gi, 'd')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
-}
-
-function normalizeRegionValue(region, startPoint = '', endPoint = '') {
-  const normalizedRegion = normalizeRequestKeyPart(region).replace(/[^a-z]/g, '');
-
-  if (['north', 'mienbac', 'bac', 'mb'].includes(normalizedRegion)) return 'north';
-  if (['central', 'mientrung', 'trung', 'mt'].includes(normalizedRegion)) return 'central';
-  if (['south', 'miennam', 'nam', 'mn'].includes(normalizedRegion)) return 'south';
-
-  return getRegionByProvince(startPoint || endPoint);
-}
-
-function mergeRequests(primary = [], fallback = []) {
-  const merged = [];
-  const seen = new Set();
-
-  [...primary, ...fallback].forEach((request, index) => {
-    const normalizedRequest = {
-      ...request,
-      region: normalizeRegionValue(request.region, request.startPoint, request.endPoint),
-    };
-
-    const key = [
-      normalizePhone(normalizedRequest.phone),
-      normalizeRequestKeyPart(normalizedRequest.name),
-      normalizeRequestKeyPart(normalizedRequest.startPoint),
-      normalizeRequestKeyPart(normalizedRequest.endPoint),
-      normalizeRequestKeyPart(normalizedRequest.note),
-      String(parsePrice(normalizedRequest.price)),
-    ].join('|');
-
-    if (seen.has(key)) return;
-    seen.add(key);
-
-    merged.push({
-      status: 'waiting',
-      ...normalizedRequest,
-      _id: normalizedRequest._id || `merged-req-${index + 1}`,
-    });
-  });
-
-  return merged;
-}
-
-const PROVINCE_REGION_LOOKUP = (() => {
-  const aliasMap = {
-    hanoi: 'north',
-    haiphong: 'north',
-    haiduong: 'north',
-    hungyen: 'north',
-    thaibinh: 'north',
-    hanam: 'north',
-    namdinh: 'north',
-    ninhbinh: 'north',
-    vinhphuc: 'north',
-    bacninh: 'north',
-    quangninh: 'north',
-    langson: 'north',
-    caobang: 'north',
-    backan: 'north',
-    thainguyen: 'north',
-    tuyenquang: 'north',
-    hagiang: 'north',
-    laocai: 'north',
-    yenbai: 'north',
-    laichau: 'north',
-    dienbien: 'north',
-    sonla: 'north',
-    hoabinh: 'north',
-    phutho: 'north',
-    bacgiang: 'north',
-    hue: 'central',
-    thuathienhue: 'central',
-    danang: 'central',
-    quynhon: 'central',
-    binhdinh: 'central',
-    pleiku: 'central',
-    gialai: 'central',
-    kontum: 'central',
-    nhatrang: 'central',
-    khanhhoa: 'central',
-    phanrang: 'central',
-    ninhthuan: 'central',
-    dalat: 'central',
-    lamdong: 'central',
-    daklak: 'central',
-    daknong: 'central',
-    tphcm: 'south',
-    thanhphohochiminh: 'south',
-    hochiminh: 'south',
-    hochiminhcity: 'south',
-    saigon: 'south',
-    vungtau: 'south',
-    bariavungtau: 'south',
-    bienhoa: 'south',
-    dongnai: 'south',
-    cantho: 'south',
-    bentre: 'south',
-    tiengiang: 'south',
-    vinhlong: 'south',
-    kiengiang: 'south',
-    camau: 'south',
-    longan: 'south',
-    binhduong: 'south',
-    tayninh: 'south',
-  };
-
-  const lookup = {};
-  Object.entries(REGIONS).forEach(([regionKey, provinces]) => {
-    provinces.forEach((province) => {
-      lookup[normalizeProvinceName(province)] = regionKey;
-    });
-  });
-
-  Object.entries(aliasMap).forEach(([alias, regionKey]) => {
-    lookup[alias] = regionKey;
-  });
-
-  return lookup;
-})();
 
 function getRegionByProvince(province) {
-  const raw = String(province || '').trim();
-  if (!raw) return 'north';
-
-  if (REGIONS.north.includes(raw)) return 'north';
-  if (REGIONS.central.includes(raw)) return 'central';
-  if (REGIONS.south.includes(raw)) return 'south';
-
-  const normalized = normalizeProvinceName(raw);
-  if (PROVINCE_REGION_LOOKUP[normalized]) return PROVINCE_REGION_LOOKUP[normalized];
-
-  const matchedKey = Object.keys(PROVINCE_REGION_LOOKUP).find((key) => normalized.includes(key) || key.includes(normalized));
-  return matchedKey ? PROVINCE_REGION_LOOKUP[matchedKey] : 'north';
+  if (REGIONS.north.includes(province)) return 'north';
+  if (REGIONS.central.includes(province)) return 'central';
+  if (REGIONS.south.includes(province)) return 'south';
+  return 'north';
 }
 
 function parseInitialDataFromDom() {
@@ -256,7 +127,7 @@ function parseInitialDataFromDom() {
     };
   }).filter((item) => item.startPoint || item.endPoint || item.phone);
 
-  return { requests, drivers: HTML_DRIVERS };
+  return { requests: [...requests, ...SEEDED_REQUESTS], drivers: HTML_DRIVERS };
 }
 
 function buildQrUrl(cfg = {}) {
@@ -599,7 +470,7 @@ function render() {
   req.appendChild(choose);
 
   const filtered = state.requests.filter((r) => {
-    const reqRegion = normalizeRegionValue(r.region, r.startPoint, r.endPoint);
+    const reqRegion = r.region || getRegionByProvince(r.startPoint || r.endPoint);
     return reqRegion === state.requestRegion
       && (!state.selectedProvince || r.startPoint === state.selectedProvince || r.endPoint === state.selectedProvince);
   });
@@ -676,7 +547,9 @@ async function loadData() {
     const serverDrivers = Array.isArray(drvs.drivers) ? drvs.drivers : [];
     state.qrConfig = qrRes.qrConfig || state.qrConfig;
 
-    state.requests = mergeRequests(serverRequests, localRequests);
+    state.requests = serverRequests.length
+      ? serverRequests.map((r) => ({ ...r, region: r.region || getRegionByProvince(r.startPoint || r.endPoint) }))
+      : localRequests;
 
     state.drivers = HTML_DRIVERS;
 
