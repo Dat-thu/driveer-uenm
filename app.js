@@ -453,10 +453,13 @@ function render() {
   choose.firstElementChild.appendChild(select);
   req.appendChild(choose);
 
+  const selectedProvinceNormalized = normalizePlaceName(state.selectedProvince);
   const filtered = state.requests.filter((r) => {
     const reqRegion = r.region || getRegionByProvince(r.startPoint || r.endPoint);
+    const startNormalized = normalizePlaceName(r.startPoint || '');
+    const endNormalized = normalizePlaceName(r.endPoint || '');
     return reqRegion === state.requestRegion
-      && (!state.selectedProvince || r.startPoint === state.selectedProvince || r.endPoint === state.selectedProvince);
+      && (!state.selectedProvince || startNormalized === selectedProvinceNormalized || endNormalized === selectedProvinceNormalized);
   });
 
   const h3 = document.createElement('h3');
