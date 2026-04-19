@@ -86,7 +86,32 @@ function getRegionByProvince(province) {
 }
 
 function parseInitialDataFromDom() {
-  return { requests: [], drivers: HTML_DRIVERS };
+  const requestCards = qa('#root .request-card');
+  const requests = requestCards.map((card, index) => {
+    const name = q('.request-name', card)?.textContent?.trim() || `Khách ${index + 1}`;
+    const phoneText = q('.request-phone', card)?.textContent?.trim() || '';
+    const routeText = q('.request-route', card)?.textContent?.trim() || '';
+    const noteText = q('.request-note', card)?.textContent?.trim() || '';
+    const priceText = q('.request-price', card)?.textContent?.trim() || '';
+
+    const routeParts = routeText.split(/->|→|⇄|<->/).map((part) => part.trim()).filter(Boolean);
+    const startPoint = routeParts[0] || '';
+    const endPoint = routeParts[1] || '';
+
+    return {
+      _id: `dom-req-${index + 1}`,
+      name,
+      phone: normalizePhone(phoneText),
+      startPoint,
+      endPoint,
+      note: noteText.replace(/^Ghi chú:\s*/i, '').trim(),
+      price: parsePrice(priceText),
+      region: getRegionByProvince(startPoint || endPoint),
+      status: 'waiting',
+    };
+  }).filter((item) => item.startPoint || item.endPoint || item.phone);
+
+  return { requests, drivers: HTML_DRIVERS };
 }
 
 function buildQrUrl(cfg = {}) {
@@ -531,16 +556,15 @@ async function loadData() {
 
 (async function init() {
   const root = document.querySelector('#root');
-  root.innerHTML = '<div class="app"></div>';
-  state.requests = [];
-  state.requestsReady = false;
+  const initialDom = parseInitialDataFromDom();
+  const cachedRequests = load('local_requests_cache', []);
 
+  state.requests = initialDom.requests.length ? initialDom.requests : cachedRequests;
+  state.requestsReady = true;
+
+  root.innerHTML = '<div class="app"></div>';
   render();
 
-  setTimeout(async () => {
-    await loadData();
-    state.requestsReady = true;
-    render();
-  }, 5000);
+  loadData().then(() => render()).catch(() => render());
   window.DEBUG_APP = { state, loadData, render, setupAuthModal, paymentModal, persistLists };
 })();
