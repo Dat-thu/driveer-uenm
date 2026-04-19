@@ -77,6 +77,16 @@ function fmtPhone(p) { return String(p || '').replace(/(\d{3})(\d{3})(\d{3,4})/,
 function initials(name) { return String(name || 'TX').trim().split(/\s+/).map((s) => s[0]).slice(0, 2).join('').toUpperCase() || 'TX'; }
 function normalizePhone(phone = '') { return String(phone).replace(/\D+/g, ''); }
 function parsePrice(text = '') { return Number(String(text).replace(/[^\d]/g, '')) || 0; }
+function normalizePlaceName(value = '') {
+  return String(value)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 function getRegionByProvince(province) {
   if (REGIONS.north.includes(province)) return 'north';
@@ -453,13 +463,10 @@ function render() {
   choose.firstElementChild.appendChild(select);
   req.appendChild(choose);
 
-  const selectedProvinceNormalized = normalizePlaceName(state.selectedProvince);
   const filtered = state.requests.filter((r) => {
     const reqRegion = r.region || getRegionByProvince(r.startPoint || r.endPoint);
-    const startNormalized = normalizePlaceName(r.startPoint || '');
-    const endNormalized = normalizePlaceName(r.endPoint || '');
     return reqRegion === state.requestRegion
-      && (!state.selectedProvince || startNormalized === selectedProvinceNormalized || endNormalized === selectedProvinceNormalized);
+      && (!state.selectedProvince || r.startPoint === state.selectedProvince || r.endPoint === state.selectedProvince);
   });
 
   const h3 = document.createElement('h3');
@@ -561,29 +568,13 @@ async function loadData() {
   const root = document.querySelector('#root');
   const initialDom = parseInitialDataFromDom();
   const cachedRequests = load('local_requests_cache', []);
-  const cachedDrivers = load('local_drivers_cache', []);
 
   state.requests = initialDom.requests.length ? initialDom.requests : cachedRequests;
-  state.drivers = cachedDrivers.length ? cachedDrivers : HTML_DRIVERS;
-  state.requestsReady = false;
+  state.requestsReady = true;
 
   root.innerHTML = '<div class="app"></div>';
   render();
 
-  setTimeout(async () => {
-    try {
-      await loadData();
-    } finally {
-      if (!state.requests.length) {
-        state.requests = initialDom.requests.length ? initialDom.requests : cachedRequests;
-      }
-      if (!state.drivers.length) {
-        state.drivers = cachedDrivers.length ? cachedDrivers : HTML_DRIVERS;
-      }
-      state.requestsReady = true;
-      render();
-    }
-  }, 5000);
-
+  loadData().then(() => render()).catch(() => render());
   window.DEBUG_APP = { state, loadData, render, setupAuthModal, paymentModal, persistLists };
 })();
