@@ -1,4 +1,4 @@
-const API_BASE = 'https://driver-uenm.cfd/api';
+const API_BASE = 'https://driver-uenm.cfd';
 
 const REGIONS = {
   north: ['Hà Nội', 'Hải Phòng', 'Hải Dương', 'Hưng Yên', 'Thái Bình', 'Hà Nam', 'Nam Định', 'Ninh Bình', 'Vĩnh Phúc', 'Bắc Ninh', 'Quảng Ninh', 'Lạng Sơn', 'Cao Bằng', 'Bắc Kạn', 'Thái Nguyên', 'Tuyên Quang', 'Hà Giang', 'Lào Cai', 'Yên Bái', 'Lai Châu', 'Điện Biên', 'Sơn La', 'Hòa Bình', 'Phú Thọ', 'Bắc Giang'],
@@ -493,24 +493,40 @@ async function loadData() {
   const localRequests = initialDom.requests.length > cachedRequests.length ? initialDom.requests : cachedRequests;
   const localDrivers = initialDom.drivers.length > cachedDrivers.length ? initialDom.drivers : cachedDrivers;
 
+  const normalizeRequests = (items) => (Array.isArray(items) ? items.map((r) => ({
+    ...r,
+    region: r.region || getRegionByProvince(r.startPoint || r.endPoint),
+  })) : []);
+
+  const fetchRequestsFallbacks = async () => {
+    const endpoints = [
+      '/public/requests',
+      state.token ? '/requests?status=waiting' : null,
+      state.token ? '/admin/requests' : null,
+    ].filter(Boolean);
+
+    for (const endpoint of endpoints) {
+      try {
+        const res = await api(endpoint);
+        const requests = normalizeRequests(res.requests || []);
+        if (requests.length) return requests;
+      } catch {
+        // thử endpoint kế tiếp
+      }
+    }
+    return localRequests;
+  };
+
   try {
-    const requestsPromise = state.token
-      ? api('/requests?status=waiting').catch(() => ({ requests: localRequests }))
-      : api('/public/requests').catch(() => ({ requests: localRequests }));
-    const driversPromise = api('/drivers').catch(() => ({ drivers: [] }));
+    const [requests, drvs, qrRes] = await Promise.all([
+      fetchRequestsFallbacks(),
+      api('/drivers').catch(() => ({ drivers: localDrivers })),
+      api('/qr-config').catch(() => ({ qrConfig: state.qrConfig })),
+    ]);
 
-    const qrPromise = api('/qr-config').catch(() => ({ qrConfig: state.qrConfig }));
-    const [reqs, drvs, qrRes] = await Promise.all([requestsPromise, driversPromise, qrPromise]);
-
-    const serverRequests = Array.isArray(reqs.requests) ? reqs.requests : [];
-    const serverDrivers = Array.isArray(drvs.drivers) ? drvs.drivers : [];
+    state.requests = requests.length ? requests : localRequests;
+    state.drivers = Array.isArray(drvs.drivers) && drvs.drivers.length ? drvs.drivers : localDrivers;
     state.qrConfig = qrRes.qrConfig || state.qrConfig;
-
-    state.requests = serverRequests.length
-      ? serverRequests.map((r) => ({ ...r, region: r.region || getRegionByProvince(r.startPoint || r.endPoint) }))
-      : localRequests;
-
-    state.drivers = HTML_DRIVERS;
 
     if (state.user && !state.user.status) {
       try {
@@ -531,16 +547,15 @@ async function loadData() {
 
 (async function init() {
   const root = document.querySelector('#root');
-  root.innerHTML = '<div class="app"></div>';
-  state.requests = [];
-  state.requestsReady = false;
+  state.requests = load('local_requests_cache', []);
+  state.requestsReady = true;
 
-  render();
-
-  setTimeout(async () => {
-    await loadData();
-    state.requestsReady = true;
+  if (!root.querySelector('.app')) {
+    root.innerHTML = '<div class="app"></div>';
     render();
-  }, 5000);
+  }
+
+  await loadData();
+  render();
   window.DEBUG_APP = { state, loadData, render, setupAuthModal, paymentModal, persistLists };
 })();
