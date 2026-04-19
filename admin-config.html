@@ -120,14 +120,14 @@
 
     async function loadConfig() {
       const headers = adminToken ? { Authorization: `Bearer ${adminToken}` } : {};
-      const res = await fetch(adminToken ? 'https://driver-uenm.cfd//api/admin/qr-config' : 'https://driver-uenm.cfd//api/qr-config', { headers });
+      const res = await fetch(adminToken ? '/api/admin/qr-config' : '/api/qr-config', { headers });
       const data = await readJsonSafe(res);
       if (!res.ok) throw new Error(data.message || 'Không tải được cấu hình');
       fillForm(data.qrConfig || {}, data.telegramConfig || {});
     }
 
     async function loginAdmin() {
-      const res = await fetch('https://driver-uenm.cfd//api/auth/admin/login', {
+      const res = await fetch('/api/auth/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: document.getElementById('username').value.trim(), password: document.getElementById('password').value })
@@ -142,7 +142,7 @@
     async function saveConfig() {
       if (!adminToken) throw new Error('Vui lòng đăng nhập admin trước');
       const cfg = getFormConfig();
-      const res = await fetch('https://driver-uenm.cfd//api/admin/qr-config', {
+      const res = await fetch('/api/admin/qr-config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
         body: JSON.stringify(cfg)
