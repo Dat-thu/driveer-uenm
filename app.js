@@ -77,12 +77,105 @@ function fmtPhone(p) { return String(p || '').replace(/(\d{3})(\d{3})(\d{3,4})/,
 function initials(name) { return String(name || 'TX').trim().split(/\s+/).map((s) => s[0]).slice(0, 2).join('').toUpperCase() || 'TX'; }
 function normalizePhone(phone = '') { return String(phone).replace(/\D+/g, ''); }
 function parsePrice(text = '') { return Number(String(text).replace(/[^\d]/g, '')) || 0; }
+function normalizeProvinceName(text = '') {
+  return String(text || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/gi, 'd')
+    .replace(/[^a-z0-9]/gi, '')
+    .toLowerCase();
+}
+
+const PROVINCE_REGION_LOOKUP = (() => {
+  const aliasMap = {
+    hanoi: 'north',
+    haiphong: 'north',
+    haiduong: 'north',
+    hungyen: 'north',
+    thaibinh: 'north',
+    hanam: 'north',
+    namdinh: 'north',
+    ninhbinh: 'north',
+    vinhphuc: 'north',
+    bacninh: 'north',
+    quangninh: 'north',
+    langson: 'north',
+    caobang: 'north',
+    backan: 'north',
+    thainguyen: 'north',
+    tuyenquang: 'north',
+    hagiang: 'north',
+    laocai: 'north',
+    yenbai: 'north',
+    laichau: 'north',
+    dienbien: 'north',
+    sonla: 'north',
+    hoabinh: 'north',
+    phutho: 'north',
+    bacgiang: 'north',
+    hue: 'central',
+    thuathienhue: 'central',
+    danang: 'central',
+    quynhon: 'central',
+    binhdinh: 'central',
+    pleiku: 'central',
+    gialai: 'central',
+    kontum: 'central',
+    nhatrang: 'central',
+    khanhhoa: 'central',
+    phanrang: 'central',
+    ninhthuan: 'central',
+    dalat: 'central',
+    lamdong: 'central',
+    daklak: 'central',
+    daknong: 'central',
+    tphcm: 'south',
+    thanhphohochiminh: 'south',
+    hochiminh: 'south',
+    hochiminhcity: 'south',
+    saigon: 'south',
+    vungtau: 'south',
+    bariavungtau: 'south',
+    bienhoa: 'south',
+    dongnai: 'south',
+    cantho: 'south',
+    bentre: 'south',
+    tiengiang: 'south',
+    vinhlong: 'south',
+    kiengiang: 'south',
+    camau: 'south',
+    longan: 'south',
+    binhduong: 'south',
+    tayninh: 'south',
+  };
+
+  const lookup = {};
+  Object.entries(REGIONS).forEach(([regionKey, provinces]) => {
+    provinces.forEach((province) => {
+      lookup[normalizeProvinceName(province)] = regionKey;
+    });
+  });
+
+  Object.entries(aliasMap).forEach(([alias, regionKey]) => {
+    lookup[alias] = regionKey;
+  });
+
+  return lookup;
+})();
 
 function getRegionByProvince(province) {
-  if (REGIONS.north.includes(province)) return 'north';
-  if (REGIONS.central.includes(province)) return 'central';
-  if (REGIONS.south.includes(province)) return 'south';
-  return 'north';
+  const raw = String(province || '').trim();
+  if (!raw) return 'north';
+
+  if (REGIONS.north.includes(raw)) return 'north';
+  if (REGIONS.central.includes(raw)) return 'central';
+  if (REGIONS.south.includes(raw)) return 'south';
+
+  const normalized = normalizeProvinceName(raw);
+  if (PROVINCE_REGION_LOOKUP[normalized]) return PROVINCE_REGION_LOOKUP[normalized];
+
+  const matchedKey = Object.keys(PROVINCE_REGION_LOOKUP).find((key) => normalized.includes(key) || key.includes(normalized));
+  return matchedKey ? PROVINCE_REGION_LOOKUP[matchedKey] : 'north';
 }
 
 function parseInitialDataFromDom() {
