@@ -78,10 +78,32 @@ function initials(name) { return String(name || 'TX').trim().split(/\s+/).map((s
 function normalizePhone(phone = '') { return String(phone).replace(/\D+/g, ''); }
 function parsePrice(text = '') { return Number(String(text).replace(/[^\d]/g, '')) || 0; }
 
+function normalizePlaceName(value = '') {
+  return String(value)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/tp\.?\s*/g, 'thanh pho ')
+    .replace(/hcm/g, 'ho chi minh')
+    .replace(/qh/g, 'quy nhon')
+    .replace(/vt/g, 'vung tau')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function getRegionByProvince(province) {
-  if (REGIONS.north.includes(province)) return 'north';
-  if (REGIONS.central.includes(province)) return 'central';
-  if (REGIONS.south.includes(province)) return 'south';
+  const normalized = normalizePlaceName(province);
+  const inRegion = (items) => items.some((item) => normalizePlaceName(item) === normalized);
+
+  if (inRegion(REGIONS.north)) return 'north';
+  if (inRegion(REGIONS.central)) return 'central';
+  if (inRegion(REGIONS.south)) return 'south';
+
+  if (/da nang|hue|quang|quy nhon|kon tum|gia lai|dak lak|dak nong|lam dong|nha trang|phan rang/.test(normalized)) return 'central';
+  if (/ho chi minh|binh duong|dong nai|long an|tien giang|vung tau|tay ninh|binh phuoc|can tho|an giang|kien giang|dong thap|vinh long|hau giang|soc trang|bac lieu|ca mau|ben tre|tra vinh/.test(normalized)) return 'south';
+
   return 'north';
 }
 
