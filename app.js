@@ -86,6 +86,48 @@ function normalizeProvinceName(text = '') {
     .toLowerCase();
 }
 
+function normalizeRequestKeyPart(value = '') {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/gi, 'd')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function mergeRequests(primary = [], fallback = []) {
+  const merged = [];
+  const seen = new Set();
+
+  [...primary, ...fallback].forEach((request, index) => {
+    const normalizedRequest = {
+      ...request,
+      region: request.region || getRegionByProvince(request.startPoint || request.endPoint),
+    };
+
+    const key = [
+      normalizePhone(normalizedRequest.phone),
+      normalizeRequestKeyPart(normalizedRequest.name),
+      normalizeRequestKeyPart(normalizedRequest.startPoint),
+      normalizeRequestKeyPart(normalizedRequest.endPoint),
+      normalizeRequestKeyPart(normalizedRequest.note),
+      String(parsePrice(normalizedRequest.price)),
+    ].join('|');
+
+    if (seen.has(key)) return;
+    seen.add(key);
+
+    merged.push({
+      status: 'waiting',
+      ...normalizedRequest,
+      _id: normalizedRequest._id || `merged-req-${index + 1}`,
+    });
+  });
+
+  return merged;
+}
+
 const PROVINCE_REGION_LOOKUP = (() => {
   const aliasMap = {
     hanoi: 'north',
@@ -624,9 +666,7 @@ async function loadData() {
     const serverDrivers = Array.isArray(drvs.drivers) ? drvs.drivers : [];
     state.qrConfig = qrRes.qrConfig || state.qrConfig;
 
-    state.requests = serverRequests.length
-      ? serverRequests.map((r) => ({ ...r, region: r.region || getRegionByProvince(r.startPoint || r.endPoint) }))
-      : localRequests;
+    state.requests = mergeRequests(serverRequests, localRequests);
 
     state.drivers = HTML_DRIVERS;
 
