@@ -7,6 +7,7 @@ const REGIONS = {
 };
 
 const ALL_PROVINCES = [...new Set([...REGIONS.north, ...REGIONS.central, ...REGIONS.south])];
+const REQUESTS_CACHE_KEY = 'local_requests_cache_v2';
 
 const HTML_DRIVERS = [
   { name: 'Tài xế 6', phone: '032 xxxx 415', route: 'Cầu Giấy ⇄ Hưng Yên', avatar: 'https://driver-uenm.vercel.app/assets/z7062668584897_e5c2ed5020cd2b90921cdd893caba47a-BBqvol0J.jpg', region: 'north' },
@@ -48,49 +49,49 @@ const HTML_DRIVERS = [
 }));
 
 const SEEDED_REQUESTS = [
-  { name: 'Anh Việt', phone: '0912345678', startPoint: 'Hà Nội', endPoint: 'Hải Phòng', note: 'Xe 4 chỗ nhận khách từ 5h sáng', price: 900000, region: 'north', status: 'waiting' },
-  { name: 'Anh Sơn', phone: '0987654321', startPoint: 'Hà Nội', endPoint: 'Quảng Ninh', note: 'Đi Hạ Long trong ngày, có thể ghép khách', price: 1200000, region: 'north', status: 'waiting' },
-  { name: 'Chị Hương', phone: '0971122334', startPoint: 'Bắc Ninh', endPoint: 'Ninh Bình', note: 'Xe 7 chỗ, chạy sáng và chiều', price: 1100000, region: 'north', status: 'waiting' },
-  { name: 'Anh Mạnh', phone: '0962233445', startPoint: 'Hà Nội', endPoint: 'Lào Cai', note: 'Nhận khách tuyến Sa Pa, tối xuất phát', price: 1500000, region: 'north', status: 'waiting' },
-  { name: 'Anh Trường', phone: '0945566778', startPoint: 'Hải Dương', endPoint: 'Hà Nội', note: 'Có mặt nhanh trong 30 phút', price: 700000, region: 'north', status: 'waiting' },
-  { name: 'Anh Dương', phone: '0913456781', startPoint: 'Hà Nội', endPoint: 'Nam Định', note: 'Xe 5 chỗ, chạy khung giờ sáng', price: 850000, region: 'north', status: 'waiting' },
-  { name: 'Chị Vân', phone: '0982345671', startPoint: 'Hưng Yên', endPoint: 'Hà Nội', note: 'Đón khách quanh Ecopark', price: 500000, region: 'north', status: 'waiting' },
-  { name: 'Anh Quân', phone: '0973345612', startPoint: 'Hà Nội', endPoint: 'Thái Bình', note: 'Xe 7 chỗ, nhận đi tỉnh trong ngày', price: 1000000, region: 'north', status: 'waiting' },
-  { name: 'Anh Hòa', phone: '0967788123', startPoint: 'Hà Nội', endPoint: 'Phú Thọ', note: 'Đưa đón Việt Trì, có thể ghép 2 khách', price: 780000, region: 'north', status: 'waiting' },
-  { name: 'Chị Thu', phone: '0904455661', startPoint: 'Hải Phòng', endPoint: 'Quảng Ninh', note: 'Đi Hạ Long, xe 4 chỗ', price: 650000, region: 'north', status: 'waiting' },
-  { name: 'Anh Tài', phone: '0935566112', startPoint: 'Bắc Giang', endPoint: 'Hà Nội', note: 'Nhận khách về Mỹ Đình mỗi chiều', price: 550000, region: 'north', status: 'waiting' },
-  { name: 'Anh Bình', phone: '0919988771', startPoint: 'Lạng Sơn', endPoint: 'Hà Nội', note: 'Xe gia đình, nhận tuyến cố định', price: 1300000, region: 'north', status: 'waiting' },
-  { name: 'Chị Nga', phone: '0922233441', startPoint: 'Hà Nội', endPoint: 'Hòa Bình', note: 'Đi sớm, ưu tiên khách ghép', price: 720000, region: 'north', status: 'waiting' },
-  { name: 'Anh Lâm', phone: '0912000001', startPoint: 'Hà Nội', endPoint: 'Bắc Ninh', note: 'Đón khách khu Cầu Giấy, xe 4 chỗ', price: 420000, region: 'north', status: 'waiting' },
-  { name: 'Chị Thủy', phone: '0912000002', startPoint: 'Hà Nội', endPoint: 'Hải Dương', note: 'Đi sáng sớm, còn 2 ghế', price: 680000, region: 'north', status: 'waiting' },
-  { name: 'Anh Cảnh', phone: '0912000003', startPoint: 'Hà Nội', endPoint: 'Vĩnh Phúc', note: 'Nhận khách tuyến Nội Bài - Vĩnh Yên', price: 480000, region: 'north', status: 'waiting' },
-  { name: 'Chị Hạnh', phone: '0912000004', startPoint: 'Quảng Ninh', endPoint: 'Hà Nội', note: 'Xe 7 chỗ, đi cao tốc', price: 1150000, region: 'north', status: 'waiting' },
-  { name: 'Anh Dũng', phone: '0912000005', startPoint: 'Phú Thọ', endPoint: 'Hà Nội', note: 'Đón khách Việt Trì về Mỹ Đình', price: 760000, region: 'north', status: 'waiting' },
-  { name: 'Chị Mai', phone: '0912000006', startPoint: 'Hà Nội', endPoint: 'Thái Nguyên', note: 'Xe mới, chạy cả ngày', price: 650000, region: 'north', status: 'waiting' },
-  { name: 'Anh Khánh', phone: '0912000007', startPoint: 'Bắc Giang', endPoint: 'Bắc Ninh', note: 'Tuyến ngắn, nhận khách ghép', price: 350000, region: 'north', status: 'waiting' },
-  { name: 'Chị Lan', phone: '0912000008', startPoint: 'Hà Nội', endPoint: 'Hưng Yên', note: 'Đón khách khu Gia Lâm, Long Biên', price: 380000, region: 'north', status: 'waiting' },
-  { name: 'Anh Tùng', phone: '0912000009', startPoint: 'Hà Nội', endPoint: 'Hà Nam', note: 'Xe 5 chỗ, nhận khách công tác', price: 520000, region: 'north', status: 'waiting' },
-  { name: 'Chị Yến', phone: '0912000010', startPoint: 'Nam Định', endPoint: 'Hà Nội', note: 'Đi tối, có thể đón dọc cao tốc', price: 820000, region: 'north', status: 'waiting' },
-  { name: 'Anh Nam', phone: '0912000011', startPoint: 'Ninh Bình', endPoint: 'Hà Nội', note: 'Xe 7 chỗ, còn 3 ghế', price: 900000, region: 'north', status: 'waiting' },
-  { name: 'Chị Quỳnh', phone: '0912000012', startPoint: 'Hải Phòng', endPoint: 'Hà Nội', note: 'Đón nội thành Hải Phòng', price: 880000, region: 'north', status: 'waiting' },
-  { name: 'Anh Hậu', phone: '0912000013', startPoint: 'Hà Nội', endPoint: 'Lạng Sơn', note: 'Đi Đồng Đăng trong ngày', price: 1350000, region: 'north', status: 'waiting' },
-  { name: 'Chị Vi', phone: '0912000014', startPoint: 'Thái Bình', endPoint: 'Hà Nội', note: 'Xe 4 chỗ, khởi hành 6h sáng', price: 760000, region: 'north', status: 'waiting' },
-  { name: 'Anh Phong', phone: '0912000015', startPoint: 'Hà Nội', endPoint: 'Cao Bằng', note: 'Tuyến dài, xe 7 chỗ', price: 1850000, region: 'north', status: 'waiting' },
-  { name: 'Chị Mơ', phone: '0912000016', startPoint: 'Hà Nội', endPoint: 'Tuyên Quang', note: 'Nhận khách gia đình, xe rộng', price: 980000, region: 'north', status: 'waiting' },
-  { name: 'Anh Luân', phone: '0912000017', startPoint: 'Hà Nội', endPoint: 'Hà Giang', note: 'Đi tối, còn 2 ghế cuối', price: 1650000, region: 'north', status: 'waiting' },
-  { name: 'Chị Oanh', phone: '0912000018', startPoint: 'Lào Cai', endPoint: 'Hà Nội', note: 'Tuyến Sa Pa - Nội Bài', price: 1480000, region: 'north', status: 'waiting' },
-  { name: 'Anh Toản', phone: '0912000019', startPoint: 'Yên Bái', endPoint: 'Hà Nội', note: 'Đón khách dọc cao tốc Nội Bài - Lào Cai', price: 1120000, region: 'north', status: 'waiting' },
-  { name: 'Chị Nhi', phone: '0912000020', startPoint: 'Hà Nội', endPoint: 'Lai Châu', note: 'Xe 7 chỗ, nhận đồ gọn nhẹ', price: 2100000, region: 'north', status: 'waiting' },
-  { name: 'Anh Vương', phone: '0912000021', startPoint: 'Điện Biên', endPoint: 'Hà Nội', note: 'Chạy tuyến đêm cố định', price: 2300000, region: 'north', status: 'waiting' },
-  { name: 'Chị Phương', phone: '0912000022', startPoint: 'Sơn La', endPoint: 'Hà Nội', note: 'Xe 5 chỗ, đón khách Mộc Châu', price: 1380000, region: 'north', status: 'waiting' },
-  { name: 'Anh Hải', phone: '0912000023', startPoint: 'Hòa Bình', endPoint: 'Hà Nội', note: 'Nhận khách đi khám, công tác', price: 620000, region: 'north', status: 'waiting' },
-  { name: 'Chị Tâm', phone: '0912000024', startPoint: 'Bắc Kạn', endPoint: 'Hà Nội', note: 'Xe 7 chỗ, chạy sáng và tối', price: 1420000, region: 'north', status: 'waiting' },
-  { name: 'Anh Minh', phone: '0912000025', startPoint: 'Quảng Ninh', endPoint: 'Hải Phòng', note: 'Tuyến Hạ Long - Hải Phòng', price: 540000, region: 'north', status: 'waiting' },
-  { name: 'Chị Giang', phone: '0912000026', startPoint: 'Bắc Ninh', endPoint: 'Hà Nội', note: 'Đón khách khu Yên Phong', price: 390000, region: 'north', status: 'waiting' },
-  { name: 'Anh Đạt', phone: '0912000027', startPoint: 'Hà Nội', endPoint: 'Bắc Giang', note: 'Xe 4 chỗ, nhận khách từ Mỹ Đình', price: 460000, region: 'north', status: 'waiting' },
-  { name: 'Chị Hòa', phone: '0912000028', startPoint: 'Hà Nội', endPoint: 'Hải Phòng', note: 'Đi cao tốc, còn 1 ghế', price: 920000, region: 'north', status: 'waiting' },
-  { name: 'Anh Tân', phone: '0912000029', startPoint: 'Hưng Yên', endPoint: 'Nam Định', note: 'Xe gia đình, chạy linh hoạt', price: 640000, region: 'north', status: 'waiting' },
-  { name: 'Chị Bích', phone: '0912000030', startPoint: 'Hà Nội', endPoint: 'Phú Thọ', note: 'Đón khách khu Thanh Xuân, Hà Đông', price: 740000, region: 'north', status: 'waiting' },
+  { name: 'Minh Việt', phone: '0912345678', startPoint: 'Hà Nội', endPoint: 'Hải Phòng', note: 'Xe 4 chỗ nhận khách từ 5h sáng', price: 900000, region: 'north', status: 'waiting' },
+  { name: 'Quốc Sơn', phone: '0987654321', startPoint: 'Hà Nội', endPoint: 'Quảng Ninh', note: 'Đi Hạ Long trong ngày, có thể ghép khách', price: 1200000, region: 'north', status: 'waiting' },
+  { name: 'Thanh Hương', phone: '0971122334', startPoint: 'Bắc Ninh', endPoint: 'Ninh Bình', note: 'Xe 7 chỗ, chạy sáng và chiều', price: 1100000, region: 'north', status: 'waiting' },
+  { name: 'Gia Mạnh', phone: '0962233445', startPoint: 'Hà Nội', endPoint: 'Lào Cai', note: 'Nhận khách tuyến Sa Pa, tối xuất phát', price: 1500000, region: 'north', status: 'waiting' },
+  { name: 'Hải Trường', phone: '0945566778', startPoint: 'Hải Dương', endPoint: 'Hà Nội', note: 'Có mặt nhanh trong 30 phút', price: 700000, region: 'north', status: 'waiting' },
+  { name: 'Tuấn Dương', phone: '0913456781', startPoint: 'Hà Nội', endPoint: 'Nam Định', note: 'Xe 5 chỗ, chạy khung giờ sáng', price: 850000, region: 'north', status: 'waiting' },
+  { name: 'Ngọc Vân', phone: '0982345671', startPoint: 'Hưng Yên', endPoint: 'Hà Nội', note: 'Đón khách quanh Ecopark', price: 500000, region: 'north', status: 'waiting' },
+  { name: 'Hoàng Quân', phone: '0973345612', startPoint: 'Hà Nội', endPoint: 'Thái Bình', note: 'Xe 7 chỗ, nhận đi tỉnh trong ngày', price: 1000000, region: 'north', status: 'waiting' },
+  { name: 'Đức Hòa', phone: '0967788123', startPoint: 'Hà Nội', endPoint: 'Phú Thọ', note: 'Đưa đón Việt Trì, có thể ghép 2 khách', price: 780000, region: 'north', status: 'waiting' },
+  { name: 'Thu Hà', phone: '0904455661', startPoint: 'Hải Phòng', endPoint: 'Quảng Ninh', note: 'Đi Hạ Long, xe 4 chỗ', price: 650000, region: 'north', status: 'waiting' },
+  { name: 'Ngọc Tài', phone: '0935566112', startPoint: 'Bắc Giang', endPoint: 'Hà Nội', note: 'Nhận khách về Mỹ Đình mỗi chiều', price: 550000, region: 'north', status: 'waiting' },
+  { name: 'Quang Bình', phone: '0919988771', startPoint: 'Lạng Sơn', endPoint: 'Hà Nội', note: 'Xe gia đình, nhận tuyến cố định', price: 1300000, region: 'north', status: 'waiting' },
+  { name: 'Phương Nga', phone: '0922233441', startPoint: 'Hà Nội', endPoint: 'Hòa Bình', note: 'Đi sớm, ưu tiên khách ghép', price: 720000, region: 'north', status: 'waiting' },
+  { name: 'Khắc Lâm', phone: '0912000001', startPoint: 'Hà Nội', endPoint: 'Bắc Ninh', note: 'Đón khách khu Cầu Giấy, xe 4 chỗ', price: 420000, region: 'north', status: 'waiting' },
+  { name: 'Bảo Thủy', phone: '0912000002', startPoint: 'Hà Nội', endPoint: 'Hải Dương', note: 'Đi sáng sớm, còn 2 ghế', price: 680000, region: 'north', status: 'waiting' },
+  { name: 'Văn Cảnh', phone: '0912000003', startPoint: 'Hà Nội', endPoint: 'Vĩnh Phúc', note: 'Nhận khách tuyến Nội Bài - Vĩnh Yên', price: 480000, region: 'north', status: 'waiting' },
+  { name: 'Minh Hạnh', phone: '0912000004', startPoint: 'Quảng Ninh', endPoint: 'Hà Nội', note: 'Xe 7 chỗ, đi cao tốc', price: 1150000, region: 'north', status: 'waiting' },
+  { name: 'Tiến Dũng', phone: '0912000005', startPoint: 'Phú Thọ', endPoint: 'Hà Nội', note: 'Đón khách Việt Trì về Mỹ Đình', price: 760000, region: 'north', status: 'waiting' },
+  { name: 'Thanh Mai', phone: '0912000006', startPoint: 'Hà Nội', endPoint: 'Thái Nguyên', note: 'Xe mới, chạy cả ngày', price: 650000, region: 'north', status: 'waiting' },
+  { name: 'Gia Khánh', phone: '0912000007', startPoint: 'Bắc Giang', endPoint: 'Bắc Ninh', note: 'Tuyến ngắn, nhận khách ghép', price: 350000, region: 'north', status: 'waiting' },
+  { name: 'Bích Lan', phone: '0912000008', startPoint: 'Hà Nội', endPoint: 'Hưng Yên', note: 'Đón khách khu Gia Lâm, Long Biên', price: 380000, region: 'north', status: 'waiting' },
+  { name: 'Mạnh Tùng', phone: '0912000009', startPoint: 'Hà Nội', endPoint: 'Hà Nam', note: 'Xe 5 chỗ, nhận khách công tác', price: 520000, region: 'north', status: 'waiting' },
+  { name: 'Khánh Yến', phone: '0912000010', startPoint: 'Nam Định', endPoint: 'Hà Nội', note: 'Đi tối, có thể đón dọc cao tốc', price: 820000, region: 'north', status: 'waiting' },
+  { name: 'Hoài Nam', phone: '0912000011', startPoint: 'Ninh Bình', endPoint: 'Hà Nội', note: 'Xe 7 chỗ, còn 3 ghế', price: 900000, region: 'north', status: 'waiting' },
+  { name: 'Mỹ Quỳnh', phone: '0912000012', startPoint: 'Hải Phòng', endPoint: 'Hà Nội', note: 'Đón nội thành Hải Phòng', price: 880000, region: 'north', status: 'waiting' },
+  { name: 'Đình Hậu', phone: '0912000013', startPoint: 'Hà Nội', endPoint: 'Lạng Sơn', note: 'Đi Đồng Đăng trong ngày', price: 1350000, region: 'north', status: 'waiting' },
+  { name: 'Bảo Vi', phone: '0912000014', startPoint: 'Thái Bình', endPoint: 'Hà Nội', note: 'Xe 4 chỗ, khởi hành 6h sáng', price: 760000, region: 'north', status: 'waiting' },
+  { name: 'Quốc Phong', phone: '0912000015', startPoint: 'Hà Nội', endPoint: 'Cao Bằng', note: 'Tuyến dài, xe 7 chỗ', price: 1850000, region: 'north', status: 'waiting' },
+  { name: 'An Mơ', phone: '0912000016', startPoint: 'Hà Nội', endPoint: 'Tuyên Quang', note: 'Nhận khách gia đình, xe rộng', price: 980000, region: 'north', status: 'waiting' },
+  { name: 'Hữu Luân', phone: '0912000017', startPoint: 'Hà Nội', endPoint: 'Hà Giang', note: 'Đi tối, còn 2 ghế cuối', price: 1650000, region: 'north', status: 'waiting' },
+  { name: 'Ngọc Oanh', phone: '0912000018', startPoint: 'Lào Cai', endPoint: 'Hà Nội', note: 'Tuyến Sa Pa - Nội Bài', price: 1480000, region: 'north', status: 'waiting' },
+  { name: 'Văn Toản', phone: '0912000019', startPoint: 'Yên Bái', endPoint: 'Hà Nội', note: 'Đón khách dọc cao tốc Nội Bài - Lào Cai', price: 1120000, region: 'north', status: 'waiting' },
+  { name: 'Thu Nhi', phone: '0912000020', startPoint: 'Hà Nội', endPoint: 'Lai Châu', note: 'Xe 7 chỗ, nhận đồ gọn nhẹ', price: 2100000, region: 'north', status: 'waiting' },
+  { name: 'Gia Vương', phone: '0912000021', startPoint: 'Điện Biên', endPoint: 'Hà Nội', note: 'Chạy tuyến đêm cố định', price: 2300000, region: 'north', status: 'waiting' },
+  { name: 'Mai Phương', phone: '0912000022', startPoint: 'Sơn La', endPoint: 'Hà Nội', note: 'Xe 5 chỗ, đón khách Mộc Châu', price: 1380000, region: 'north', status: 'waiting' },
+  { name: 'Quang Hải', phone: '0912000023', startPoint: 'Hòa Bình', endPoint: 'Hà Nội', note: 'Nhận khách đi khám, công tác', price: 620000, region: 'north', status: 'waiting' },
+  { name: 'Thảo Tâm', phone: '0912000024', startPoint: 'Bắc Kạn', endPoint: 'Hà Nội', note: 'Xe 7 chỗ, chạy sáng và tối', price: 1420000, region: 'north', status: 'waiting' },
+  { name: 'Khôi Minh', phone: '0912000025', startPoint: 'Quảng Ninh', endPoint: 'Hải Phòng', note: 'Tuyến Hạ Long - Hải Phòng', price: 540000, region: 'north', status: 'waiting' },
+  { name: 'Thu Giang', phone: '0912000026', startPoint: 'Bắc Ninh', endPoint: 'Hà Nội', note: 'Đón khách khu Yên Phong', price: 390000, region: 'north', status: 'waiting' },
+  { name: 'Tiến Đạt', phone: '0912000027', startPoint: 'Hà Nội', endPoint: 'Bắc Giang', note: 'Xe 4 chỗ, nhận khách từ Mỹ Đình', price: 460000, region: 'north', status: 'waiting' },
+  { name: 'Ngọc Hòa', phone: '0912000028', startPoint: 'Hà Nội', endPoint: 'Hải Phòng', note: 'Đi cao tốc, còn 1 ghế', price: 920000, region: 'north', status: 'waiting' },
+  { name: 'Gia Tân', phone: '0912000029', startPoint: 'Hưng Yên', endPoint: 'Nam Định', note: 'Xe gia đình, chạy linh hoạt', price: 640000, region: 'north', status: 'waiting' },
+  { name: 'Mai Bích', phone: '0912000030', startPoint: 'Hà Nội', endPoint: 'Phú Thọ', note: 'Đón khách khu Thanh Xuân, Hà Đông', price: 740000, region: 'north', status: 'waiting' },
   { name: 'Anh Phú', phone: '0936677889', startPoint: 'Đà Nẵng', endPoint: 'Huế', note: 'Xe 5 chỗ chạy liên tục cả ngày', price: 650000, region: 'central', status: 'waiting' },
   { name: 'Chị Lan', phone: '0923344556', startPoint: 'Đà Nẵng', endPoint: 'Quảng Ngãi', note: 'Đón sân bay và nội thành', price: 850000, region: 'central', status: 'waiting' },
   { name: 'Anh Khang', phone: '0915566779', startPoint: 'Nha Trang', endPoint: 'Đà Lạt', note: 'Xe gia đình 7 chỗ, nhận khách ghép', price: 900000, region: 'central', status: 'waiting' },
@@ -173,7 +174,7 @@ const state = {
 
 function load(k, f) { try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(f)); } catch { return f; } }
 function save(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
-function persistLists() { save('local_requests_cache', state.requests); save('local_drivers_cache', state.drivers); }
+function persistLists() { save(REQUESTS_CACHE_KEY, state.requests); save('local_drivers_cache', state.drivers); }
 function q(s, r = document) { return r.querySelector(s); }
 function qa(s, r = document) { return [...r.querySelectorAll(s)]; }
 function regionName(k) { return k === 'north' ? 'Miền Bắc' : k === 'central' ? 'Miền Trung' : 'Miền Nam'; }
@@ -190,32 +191,7 @@ function getRegionByProvince(province) {
 }
 
 function parseInitialDataFromDom() {
-  const requestCards = qa('#root .request-card');
-  const requests = requestCards.map((card, index) => {
-    const name = q('.request-name', card)?.textContent?.trim() || `Khách ${index + 1}`;
-    const phoneText = q('.request-phone', card)?.textContent?.trim() || '';
-    const routeText = q('.request-route', card)?.textContent?.trim() || '';
-    const noteText = q('.request-note', card)?.textContent?.trim() || '';
-    const priceText = q('.request-price', card)?.textContent?.trim() || '';
-
-    const routeParts = routeText.split(/->|→|⇄|<->/).map((part) => part.trim()).filter(Boolean);
-    const startPoint = routeParts[0] || '';
-    const endPoint = routeParts[1] || '';
-
-    return {
-      _id: `dom-req-${index + 1}`,
-      name,
-      phone: normalizePhone(phoneText),
-      startPoint,
-      endPoint,
-      note: noteText.replace(/^Ghi chú:\s*/i, '').trim(),
-      price: parsePrice(priceText),
-      region: getRegionByProvince(startPoint || endPoint),
-      status: 'waiting',
-    };
-  }).filter((item) => item.startPoint || item.endPoint || item.phone);
-
-  return { requests: [...requests, ...SEEDED_REQUESTS], drivers: HTML_DRIVERS };
+  return { requests: SEEDED_REQUESTS, drivers: HTML_DRIVERS };
 }
 
 function buildQrUrl(cfg = {}) {
@@ -617,7 +593,7 @@ function render() {
 
 async function loadData() {
   const initialDom = parseInitialDataFromDom();
-  const cachedRequests = load('local_requests_cache', []);
+  const cachedRequests = load(REQUESTS_CACHE_KEY, []);
   const cachedDrivers = load('local_drivers_cache', []);
   const localRequests = initialDom.requests.length > cachedRequests.length ? initialDom.requests : cachedRequests;
   const localDrivers = initialDom.drivers.length > cachedDrivers.length ? initialDom.drivers : cachedDrivers;
@@ -661,7 +637,7 @@ async function loadData() {
 (async function init() {
   const root = document.querySelector('#root');
   const initialDom = parseInitialDataFromDom();
-  const cachedRequests = load('local_requests_cache', []);
+  const cachedRequests = load(REQUESTS_CACHE_KEY, []);
 
   state.requests = initialDom.requests.length ? initialDom.requests : cachedRequests;
   state.requestsReady = true;
