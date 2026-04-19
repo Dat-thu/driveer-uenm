@@ -96,6 +96,16 @@ function normalizeRequestKeyPart(value = '') {
     .toLowerCase();
 }
 
+function normalizeRegionValue(region, startPoint = '', endPoint = '') {
+  const normalizedRegion = normalizeRequestKeyPart(region).replace(/[^a-z]/g, '');
+
+  if (['north', 'mienbac', 'bac', 'mb'].includes(normalizedRegion)) return 'north';
+  if (['central', 'mientrung', 'trung', 'mt'].includes(normalizedRegion)) return 'central';
+  if (['south', 'miennam', 'nam', 'mn'].includes(normalizedRegion)) return 'south';
+
+  return getRegionByProvince(startPoint || endPoint);
+}
+
 function mergeRequests(primary = [], fallback = []) {
   const merged = [];
   const seen = new Set();
@@ -103,7 +113,7 @@ function mergeRequests(primary = [], fallback = []) {
   [...primary, ...fallback].forEach((request, index) => {
     const normalizedRequest = {
       ...request,
-      region: request.region || getRegionByProvince(request.startPoint || request.endPoint),
+      region: normalizeRegionValue(request.region, request.startPoint, request.endPoint),
     };
 
     const key = [
@@ -589,7 +599,7 @@ function render() {
   req.appendChild(choose);
 
   const filtered = state.requests.filter((r) => {
-    const reqRegion = r.region || getRegionByProvince(r.startPoint || r.endPoint);
+    const reqRegion = normalizeRegionValue(r.region, r.startPoint, r.endPoint);
     return reqRegion === state.requestRegion
       && (!state.selectedProvince || r.startPoint === state.selectedProvince || r.endPoint === state.selectedProvince);
   });
