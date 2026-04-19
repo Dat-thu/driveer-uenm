@@ -350,6 +350,32 @@ function fillProvinceSelect(select, regionKey, placeholder = 'Chọn tỉnh/thà
   provinces.forEach((p) => select.appendChild(new Option(p, p, false, p === current)));
 }
 
+function bindStaticHtmlActions() {
+  q('#root .auth-box__btn--primary')?.addEventListener('click', () => setupAuthModal('register'));
+  q('#root .auth-box__btn--secondary')?.addEventListener('click', () => setupAuthModal('login'));
+  q('#root .floating-cta')?.addEventListener('click', () => setupAuthModal('register'));
+
+  qa('#root .copy-btn').forEach((btn) => {
+    if (btn.dataset.boundCopy === '1') return;
+    btn.dataset.boundCopy = '1';
+    btn.addEventListener('click', async () => {
+      const card = btn.closest('.request-card');
+      const text = card?.querySelector('.request-phone')?.textContent || '';
+      const phone = normalizePhone(text);
+      if (!phone) {
+        toast('Không tìm thấy số điện thoại để sao chép', true);
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(phone);
+        toast('Đã sao chép số điện thoại');
+      } catch {
+        toast('Không thể sao chép số điện thoại', true);
+      }
+    });
+  });
+}
+
 function render() {
   const app = q('#root .app') || q('#root');
   app.classList.add('app');
@@ -540,14 +566,16 @@ async function loadData() {
     render();
   }
 
+  bindStaticHtmlActions();
   await loadData();
 
   if (q('#root .requests-section')) {
     const emptyState = q('#root .requests-section .empty-state');
     if (emptyState && state.requests.length) emptyState.remove();
+    bindStaticHtmlActions();
   } else {
     render();
   }
 
-  window.DEBUG_APP = { state, loadData, render, setupAuthModal, paymentModal, persistLists };
+  window.DEBUG_APP = { state, loadData, render, setupAuthModal, paymentModal, persistLists, bindStaticHtmlActions };
 })();
