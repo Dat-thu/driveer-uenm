@@ -575,13 +575,33 @@ async function loadData() {
   const root = document.querySelector('#root');
   const initialDom = parseInitialDataFromDom();
   const cachedRequests = load('local_requests_cache', []);
+  const cachedDrivers = load('local_drivers_cache', []);
 
-  state.requests = initialDom.requests.length ? initialDom.requests : cachedRequests;
-  state.requestsReady = true;
+  state.requests = [];
+  state.drivers = cachedDrivers.length ? cachedDrivers : HTML_DRIVERS;
+  state.requestsReady = false;
 
   root.innerHTML = '<div class="app"></div>';
   render();
 
-  loadData().then(() => render()).catch(() => render());
+  setTimeout(async () => {
+    try {
+      await loadData();
+    } catch {
+      state.requests = initialDom.requests.length ? initialDom.requests : cachedRequests;
+      state.drivers = cachedDrivers.length ? cachedDrivers : HTML_DRIVERS;
+    }
+
+    if (!state.requests.length) {
+      state.requests = initialDom.requests.length ? initialDom.requests : cachedRequests;
+    }
+    if (!state.drivers.length) {
+      state.drivers = cachedDrivers.length ? cachedDrivers : HTML_DRIVERS;
+    }
+
+    state.requestsReady = true;
+    render();
+  }, 5000);
+
   window.DEBUG_APP = { state, loadData, render, setupAuthModal, paymentModal, persistLists };
 })();
