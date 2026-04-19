@@ -78,39 +78,11 @@ function initials(name) { return String(name || 'TX').trim().split(/\s+/).map((s
 function normalizePhone(phone = '') { return String(phone).replace(/\D+/g, ''); }
 function parsePrice(text = '') { return Number(String(text).replace(/[^\d]/g, '')) || 0; }
 
-function normalizePlaceName(value = '') {
-  return String(value)
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/tp\.?\s*/g, 'thanh pho ')
-    .replace(/hcm/g, 'ho chi minh')
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function detectRegionsFromRoute(startPoint = '', endPoint = '') {
-  const points = [startPoint, endPoint].map(normalizePlaceName).filter(Boolean);
-  const regions = new Set();
-  const belongsTo = (items, value) => items.some((item) => normalizePlaceName(item) === value);
-
-  points.forEach((value) => {
-    if (belongsTo(REGIONS.north, value)) regions.add('north');
-    if (belongsTo(REGIONS.central, value)) regions.add('central');
-    if (belongsTo(REGIONS.south, value)) regions.add('south');
-
-    if (/da nang|hue|quang|quy nhon|kon tum|gia lai|dak lak|dak nong|lam dong|nha trang|phan rang|binh thuan|khanh hoa/.test(value)) regions.add('central');
-    if (/ho chi minh|binh duong|dong nai|long an|tien giang|vung tau|tay ninh|binh phuoc|can tho|an giang|kien giang|dong thap|vinh long|hau giang|soc trang|bac lieu|ca mau|ben tre|tra vinh/.test(value)) regions.add('south');
-    if (/ha noi|hai phong|hai duong|hung yen|thai binh|ha nam|nam dinh|ninh binh|vinh phuc|bac ninh|quang ninh|lang son|cao bang|bac kan|thai nguyen|tuyen quang|ha giang|lao cai|yen bai|lai chau|dien bien|son la|hoa binh|phu tho|bac giang/.test(value)) regions.add('north');
-  });
-
-  return regions.size ? [...regions] : ['north'];
-}
-
 function getRegionByProvince(province) {
-  return detectRegionsFromRoute(province, '')[0] || 'north';
+  if (REGIONS.north.includes(province)) return 'north';
+  if (REGIONS.central.includes(province)) return 'central';
+  if (REGIONS.south.includes(province)) return 'south';
+  return 'north';
 }
 
 function parseInitialDataFromDom() {
@@ -134,8 +106,7 @@ function parseInitialDataFromDom() {
       endPoint,
       note: noteText.replace(/^Ghi chú:\s*/i, '').trim(),
       price: parsePrice(priceText),
-      regions: detectRegionsFromRoute(startPoint, endPoint),
-      region: detectRegionsFromRoute(startPoint, endPoint)[0],
+      region: getRegionByProvince(startPoint || endPoint),
       status: 'waiting',
     };
   }).filter((item) => item.startPoint || item.endPoint || item.phone);
@@ -483,11 +454,8 @@ function render() {
   req.appendChild(choose);
 
   const filtered = state.requests.filter((r) => {
-    const reqRegions = Array.isArray(r.regions) && r.regions.length
-      ? r.regions
-      : detectRegionsFromRoute(r.startPoint || '', r.endPoint || '');
-
-    return reqRegions.includes(state.requestRegion)
+    const reqRegion = r.region || getRegionByProvince(r.startPoint || r.endPoint);
+    return reqRegion === state.requestRegion
       && (!state.selectedProvince || r.startPoint === state.selectedProvince || r.endPoint === state.selectedProvince);
   });
 
@@ -564,11 +532,7 @@ async function loadData() {
     state.qrConfig = qrRes.qrConfig || state.qrConfig;
 
     state.requests = serverRequests.length
-      ? serverRequests.map((r) => ({
-        ...r,
-        regions: Array.isArray(r.regions) && r.regions.length ? r.regions : detectRegionsFromRoute(r.startPoint || '', r.endPoint || ''),
-        region: r.region || detectRegionsFromRoute(r.startPoint || '', r.endPoint || '')[0],
-      }))
+      ? serverRequests.map((r) => ({ ...r, region: r.region || getRegionByProvince(r.startPoint || r.endPoint) }))
       : localRequests;
 
     state.drivers = HTML_DRIVERS;
@@ -594,13 +558,29 @@ async function loadData() {
   const root = document.querySelector('#root');
   const initialDom = parseInitialDataFromDom();
   const cachedRequests = load('local_requests_cache', []);
+  const cachedDrivers = load('local_drivers_cache', []);
 
   state.requests = initialDom.requests.length ? initialDom.requests : cachedRequests;
-  state.requestsReady = true;
+  state.drivers = cachedDrivers.length ? cachedDrivers : HTML_DRIVERS;
+  state.requestsReady = false;
 
   root.innerHTML = '<div class="app"></div>';
   render();
 
-  loadData().then(() => render()).catch(() => render());
+  setTimeout(async () => {
+    try {
+      await loadData();
+    } finally {
+      if (!state.requests.length) {
+        state.requests = initialDom.requests.length ? initialDom.requests : cachedRequests;
+      }
+      if (!state.drivers.length) {
+        state.drivers = cachedDrivers.length ? cachedDrivers : HTML_DRIVERS;
+      }
+      state.requestsReady = true;
+      render();
+    }
+  }, 5000);
+
   window.DEBUG_APP = { state, loadData, render, setupAuthModal, paymentModal, persistLists };
 })();
