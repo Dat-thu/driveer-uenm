@@ -350,32 +350,6 @@ function fillProvinceSelect(select, regionKey, placeholder = 'Chọn tỉnh/thà
   provinces.forEach((p) => select.appendChild(new Option(p, p, false, p === current)));
 }
 
-function bindStaticHtmlActions() {
-  q('#root .auth-box__btn--primary')?.addEventListener('click', () => setupAuthModal('register'));
-  q('#root .auth-box__btn--secondary')?.addEventListener('click', () => setupAuthModal('login'));
-  q('#root .floating-cta')?.addEventListener('click', () => setupAuthModal('register'));
-
-  qa('#root .copy-btn').forEach((btn) => {
-    if (btn.dataset.boundCopy === '1') return;
-    btn.dataset.boundCopy = '1';
-    btn.addEventListener('click', async () => {
-      const card = btn.closest('.request-card');
-      const text = card?.querySelector('.request-phone')?.textContent || '';
-      const phone = normalizePhone(text);
-      if (!phone) {
-        toast('Không tìm thấy số điện thoại để sao chép', true);
-        return;
-      }
-      try {
-        await navigator.clipboard.writeText(phone);
-        toast('Đã sao chép số điện thoại');
-      } catch {
-        toast('Không thể sao chép số điện thoại', true);
-      }
-    });
-  });
-}
-
 function render() {
   const app = q('#root .app') || q('#root');
   app.classList.add('app');
@@ -518,7 +492,6 @@ async function loadData() {
   const cachedDrivers = load('local_drivers_cache', []);
   const localRequests = initialDom.requests.length > cachedRequests.length ? initialDom.requests : cachedRequests;
   const localDrivers = initialDom.drivers.length > cachedDrivers.length ? initialDom.drivers : cachedDrivers;
-  if (localRequests.length && !state.requests.length) state.requests = localRequests;
 
   try {
     const requestsPromise = state.token
@@ -558,24 +531,16 @@ async function loadData() {
 
 (async function init() {
   const root = document.querySelector('#root');
-  state.requests = load('local_requests_cache', []);
-  state.requestsReady = true;
+  root.innerHTML = '<div class="app"></div>';
+  state.requests = [];
+  state.requestsReady = false;
 
-  if (!q('#root .app') && !q('#root .requests-section')) {
-    root.innerHTML = '<div class="app"></div>';
+  render();
+
+  setTimeout(async () => {
+    await loadData();
+    state.requestsReady = true;
     render();
-  }
-
-  bindStaticHtmlActions();
-  await loadData();
-
-  if (q('#root .requests-section')) {
-    const emptyState = q('#root .requests-section .empty-state');
-    if (emptyState && state.requests.length) emptyState.remove();
-    bindStaticHtmlActions();
-  } else {
-    render();
-  }
-
-  window.DEBUG_APP = { state, loadData, render, setupAuthModal, paymentModal, persistLists, bindStaticHtmlActions };
+  }, 5000);
+  window.DEBUG_APP = { state, loadData, render, setupAuthModal, paymentModal, persistLists };
 })();
