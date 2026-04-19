@@ -77,35 +77,15 @@ function fmtPhone(p) { return String(p || '').replace(/(\d{3})(\d{3})(\d{3,4})/,
 function initials(name) { return String(name || 'TX').trim().split(/\s+/).map((s) => s[0]).slice(0, 2).join('').toUpperCase() || 'TX'; }
 function normalizePhone(phone = '') { return String(phone).replace(/\D+/g, ''); }
 function parsePrice(text = '') { return Number(String(text).replace(/[^\d]/g, '')) || 0; }
-function normalizePlaceName(value = '') {
-  return String(value)
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/tp\.?\s*/g, 'thanh pho ')
-    .replace(/hcm/g, 'ho chi minh')
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function detectRegions(startPoint = '', endPoint = '') {
-  const values = [startPoint, endPoint].map(normalizePlaceName).filter(Boolean);
-  const regions = new Set();
-  const hasProvince = (items, value) => items.some((item) => normalizePlaceName(item) === value);
-
-  values.forEach((value) => {
-    if (hasProvince(REGIONS.north, value)) regions.add('north');
-    if (hasProvince(REGIONS.central, value)) regions.add('central');
-    if (hasProvince(REGIONS.south, value)) regions.add('south');
-  });
-
-  return regions.size ? [...regions] : ['north'];
-}
 
 function getRegionByProvince(province) {
-  return detectRegions(province, '')[0] || 'north';
+  const normalized = normalizePlaceName(province);
+
+  if (REGIONS.north.some((item) => normalizePlaceName(item) === normalized)) return 'north';
+  if (REGIONS.central.some((item) => normalizePlaceName(item) === normalized)) return 'central';
+  if (REGIONS.south.some((item) => normalizePlaceName(item) === normalized)) return 'south';
+
+  return 'north';
 }
 
 function parseInitialDataFromDom() {
@@ -121,8 +101,6 @@ function parseInitialDataFromDom() {
     const startPoint = routeParts[0] || '';
     const endPoint = routeParts[1] || '';
 
-    const regions = detectRegions(startPoint, endPoint);
-
     return {
       _id: `dom-req-${index + 1}`,
       name,
@@ -131,8 +109,7 @@ function parseInitialDataFromDom() {
       endPoint,
       note: noteText.replace(/^Ghi chú:\s*/i, '').trim(),
       price: parsePrice(priceText),
-      regions,
-      region: regions[0],
+      region: getRegionByProvince(startPoint || endPoint),
       status: 'waiting',
     };
   }).filter((item) => item.startPoint || item.endPoint || item.phone);
@@ -481,14 +458,11 @@ function render() {
 
   const selectedProvinceNormalized = normalizePlaceName(state.selectedProvince);
   const filtered = state.requests.filter((r) => {
-    const reqRegions = Array.isArray(r.regions) && r.regions.length
-      ? r.regions
-      : detectRegions(r.startPoint || '', r.endPoint || '');
-
+    const reqRegion = r.region || getRegionByProvince(r.startPoint || r.endPoint);
     const startNormalized = normalizePlaceName(r.startPoint || '');
     const endNormalized = normalizePlaceName(r.endPoint || '');
 
-    return reqRegions.includes(state.requestRegion)
+    return reqRegion === state.requestRegion
       && (!state.selectedProvince || startNormalized === selectedProvinceNormalized || endNormalized === selectedProvinceNormalized);
   });
 
@@ -565,17 +539,7 @@ async function loadData() {
     state.qrConfig = qrRes.qrConfig || state.qrConfig;
 
     state.requests = serverRequests.length
-      ? serverRequests.map((r) => {
-        const regions = Array.isArray(r.regions) && r.regions.length
-          ? r.regions
-          : detectRegions(r.startPoint || '', r.endPoint || '');
-
-        return {
-          ...r,
-          regions,
-          region: r.region || regions[0],
-        };
-      })
+      ? serverRequests.map((r) => ({ ...r, region: r.region || getRegionByProvince(r.startPoint || r.endPoint) }))
       : localRequests;
 
     state.drivers = HTML_DRIVERS;
