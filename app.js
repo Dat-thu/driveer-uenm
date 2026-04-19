@@ -77,25 +77,46 @@ function fmtPhone(p) { return String(p || '').replace(/(\d{3})(\d{3})(\d{3,4})/,
 function initials(name) { return String(name || 'TX').trim().split(/\s+/).map((s) => s[0]).slice(0, 2).join('').toUpperCase() || 'TX'; }
 function normalizePhone(phone = '') { return String(phone).replace(/\D+/g, ''); }
 function parsePrice(text = '') { return Number(String(text).replace(/[^\d]/g, '')) || 0; }
-function normalizePlaceName(value = '') {
-  return String(value)
-    .toLowerCase()
+function normalizeProvinceName(value = '') {
+  return String(value || '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/đ/g, 'd')
-    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/Đ/g, 'D')
+    .replace(/\b(tp|tp\.|thanh pho|tinh)\b/gi, ' ')
+    .replace(/[()'`,.-]/g, ' ')
+    .replace(/&/g, ' va ')
     .replace(/\s+/g, ' ')
-    .trim();
+    .trim()
+    .toLowerCase();
 }
 
+const PROVINCE_REGION_LOOKUP = (() => {
+  const aliases = {
+    'thua thien hue': 'central',
+    hue: 'central',
+    'dak lak': 'central',
+    'dac lac': 'central',
+    'dak nong': 'central',
+    'dac nong': 'central',
+    'ba ria vung tau': 'south',
+    'vung tau': 'south',
+    'ho chi minh': 'south',
+    'hcm': 'south',
+    'sai gon': 'south',
+  };
+
+  Object.entries(REGIONS).forEach(([regionKey, provinces]) => {
+    provinces.forEach((province) => {
+      aliases[normalizeProvinceName(province)] = regionKey;
+    });
+  });
+
+  return aliases;
+})();
+
 function getRegionByProvince(province) {
-  const normalized = normalizePlaceName(province);
-
-  if (REGIONS.north.some((item) => normalizePlaceName(item) === normalized)) return 'north';
-  if (REGIONS.central.some((item) => normalizePlaceName(item) === normalized)) return 'central';
-  if (REGIONS.south.some((item) => normalizePlaceName(item) === normalized)) return 'south';
-
-  return 'north';
+  return PROVINCE_REGION_LOOKUP[normalizeProvinceName(province)] || 'north';
 }
 
 function parseInitialDataFromDom() {
@@ -388,6 +409,29 @@ function fillProvinceSelect(select, regionKey, placeholder = 'Chọn tỉnh/thà
   provinces.forEach((p) => select.appendChild(new Option(p, p, false, p === current)));
 }
 
+function getProvinceFilterOptions(regionKey) {
+  const source = state.requests.filter((r) => (r.region || getRegionByProvince(r.startPoint || r.endPoint)) === regionKey);
+  const seen = new Map();
+
+  source.forEach((r) => {
+    [r.startPoint, r.endPoint].forEach((province) => {
+      const normalized = normalizeProvinceName(province);
+      if (!province || !normalized) return;
+      if (getRegionByProvince(province) !== regionKey) return;
+      if (!seen.has(normalized)) seen.set(normalized, province);
+    });
+  });
+
+  const merged = [...(REGIONS[regionKey] || [])];
+  seen.forEach((province, normalized) => {
+    if (!merged.some((item) => normalizeProvinceName(item) === normalized)) {
+      merged.push(province);
+    }
+  });
+
+  return merged.sort((a, b) => a.localeCompare(b, 'vi'));
+}
+
 function render() {
   const app = q('#root .app') || q('#root');
   app.classList.add('app');
@@ -455,9 +499,13 @@ function render() {
   choose.style.marginBottom = '12px';
   choose.innerHTML = '<label class="field" style="margin-bottom:0"><span>Chọn tỉnh/thành phố</span></label>';
   const select = document.createElement('select');
+  const provinceOptions = getProvinceFilterOptions(state.requestRegion);
   select.style.cssText = 'width:100%;padding:12px 36px 12px 12px;border-radius:12px;border:2px solid #e5e7eb;font-size:15px;font-weight:600;background:#fff;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 12 12\'%3E%3Cpath fill=\'%23333\' d=\'M6 9L1 4h10z\'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px';
   select.appendChild(new Option(`Tất cả tỉnh/thành (${regionName(state.requestRegion)})`, ''));
-  REGIONS[state.requestRegion].forEach((p) => select.appendChild(new Option(p, p)));
+  provinceOptions.forEach((p) => select.appendChild(new Option(p, p)));
+  if (state.selectedProvince && !provinceOptions.includes(state.selectedProvince)) {
+    state.selectedProvince = '';
+  }
   select.value = state.selectedProvince;
   select.onchange = (e) => {
     state.selectedProvince = e.target.value;
@@ -466,14 +514,14 @@ function render() {
   choose.firstElementChild.appendChild(select);
   req.appendChild(choose);
 
-  const selectedProvinceNormalized = normalizePlaceName(state.selectedProvince);
   const filtered = state.requests.filter((r) => {
     const reqRegion = r.region || getRegionByProvince(r.startPoint || r.endPoint);
-    const startNormalized = normalizePlaceName(r.startPoint || '');
-    const endNormalized = normalizePlaceName(r.endPoint || '');
+    const startProvince = normalizeProvinceName(r.startPoint);
+    const endProvince = normalizeProvinceName(r.endPoint);
+    const selectedProvince = normalizeProvinceName(state.selectedProvince);
 
     return reqRegion === state.requestRegion
-      && (!state.selectedProvince || startNormalized === selectedProvinceNormalized || endNormalized === selectedProvinceNormalized);
+      && (!selectedProvince || startProvince === selectedProvince || endProvince === selectedProvince);
   });
 
   const h3 = document.createElement('h3');
@@ -575,33 +623,13 @@ async function loadData() {
   const root = document.querySelector('#root');
   const initialDom = parseInitialDataFromDom();
   const cachedRequests = load('local_requests_cache', []);
-  const cachedDrivers = load('local_drivers_cache', []);
 
-  state.requests = [];
-  state.drivers = cachedDrivers.length ? cachedDrivers : HTML_DRIVERS;
-  state.requestsReady = false;
+  state.requests = initialDom.requests.length ? initialDom.requests : cachedRequests;
+  state.requestsReady = true;
 
   root.innerHTML = '<div class="app"></div>';
   render();
 
-  setTimeout(async () => {
-    try {
-      await loadData();
-    } catch {
-      state.requests = initialDom.requests.length ? initialDom.requests : cachedRequests;
-      state.drivers = cachedDrivers.length ? cachedDrivers : HTML_DRIVERS;
-    }
-
-    if (!state.requests.length) {
-      state.requests = initialDom.requests.length ? initialDom.requests : cachedRequests;
-    }
-    if (!state.drivers.length) {
-      state.drivers = cachedDrivers.length ? cachedDrivers : HTML_DRIVERS;
-    }
-
-    state.requestsReady = true;
-    render();
-  }, 5000);
-
+  loadData().then(() => render()).catch(() => render());
   window.DEBUG_APP = { state, loadData, render, setupAuthModal, paymentModal, persistLists };
 })();
