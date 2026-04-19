@@ -492,6 +492,7 @@ async function loadData() {
   const cachedDrivers = load('local_drivers_cache', []);
   const localRequests = initialDom.requests.length > cachedRequests.length ? initialDom.requests : cachedRequests;
   const localDrivers = initialDom.drivers.length > cachedDrivers.length ? initialDom.drivers : cachedDrivers;
+  if (localRequests.length && !state.requests.length) state.requests = localRequests;
 
   try {
     const requestsPromise = state.token
@@ -531,16 +532,22 @@ async function loadData() {
 
 (async function init() {
   const root = document.querySelector('#root');
-  root.innerHTML = '<div class="app"></div>';
-  state.requests = [];
-  state.requestsReady = false;
+  state.requests = load('local_requests_cache', []);
+  state.requestsReady = true;
 
-  render();
-
-  setTimeout(async () => {
-    await loadData();
-    state.requestsReady = true;
+  if (!q('#root .app') && !q('#root .requests-section')) {
+    root.innerHTML = '<div class="app"></div>';
     render();
-  }, 5000);
+  }
+
+  await loadData();
+
+  if (q('#root .requests-section')) {
+    const emptyState = q('#root .requests-section .empty-state');
+    if (emptyState && state.requests.length) emptyState.remove();
+  } else {
+    render();
+  }
+
   window.DEBUG_APP = { state, loadData, render, setupAuthModal, paymentModal, persistLists };
 })();
