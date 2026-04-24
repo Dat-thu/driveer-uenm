@@ -595,9 +595,9 @@ function render() {
   } else {
     const box = document.createElement('div');
     box.className = 'main-actions';
-    box.innerHTML = `<div class="user-summary-card user-summary-card--clickable" style="cursor:pointer"><div class="user-summary-card__avatar">${initials(state.user.name)}</div><div class="user-summary-card__info"><span class="user-summary-card__greeting">Xin chào,</span><strong class="user-summary-card__name">${state.user.name}</strong><span class="user-summary-card__phone">${fmtPhone(state.user.phone)}</span><span class="user-summary-card__hint">Nhấn để xem dashboard</span></div></div><button class="main-action-btn main-action-btn--logout"><span class="main-action-btn__icon">🚪</span><span class="main-action-btn__text">Đăng xuất</span></button>`;
-    box.querySelector('.user-summary-card').onclick = () => alert('Dashboard local đang giữ nguyên trải nghiệm');
-    box.querySelector('.main-action-btn--logout').onclick = () => {
+    box.innerHTML = `<div class="user-summary-card user-summary-card--profile"><div class="user-summary-card__avatar">${initials(state.user.name)}</div><div class="user-summary-card__info"><span class="user-summary-card__role">Tài xế</span><strong class="user-summary-card__name">${state.user.name}</strong><span class="user-summary-card__phone">${state.user.phone || ''}</span></div><button class="user-summary-card__logout" aria-label="Đăng xuất" title="Đăng xuất"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg></button></div><div class="driver-home-panel"><div class="driver-home-action-card"><div class="driver-home-action-left driver-home-action-left--stack"><span class="driver-home-action-title">Rút tiền</span><span class="driver-home-balance">Số dư: <strong>200.000 VND</strong></span></div><span class="driver-home-chevron">›</span></div><div class="driver-home-action-card"><div class="driver-home-action-left"><span class="driver-home-phone-icon">📱</span><span class="driver-home-action-title">Tải ứng dụng đi</span></div><span class="driver-home-badge">APK</span></div><div class="driver-home-stats-card"><span class="driver-home-stats-topline"></span><h3>Hành động cuốc xe</h3><div class="driver-home-stats-grid"><div class="driver-home-stat-item"><div class="driver-home-stat-icon driver-home-stat-icon--trip" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M5 11l1.4-3.3A2 2 0 0 1 8.25 6.5h7.5a2 2 0 0 1 1.85 1.2L19 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="4" y="11" width="16" height="6" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="8" cy="17" r="1.6"/><circle cx="16" cy="17" r="1.6"/></svg></div><div class="driver-home-stat-label">CUỐC XE HOÀN THÀNH/THÁNG</div><div class="driver-home-stat-value">0</div></div><div class="driver-home-stat-divider"></div><div class="driver-home-stat-item"><div class="driver-home-stat-icon driver-home-stat-icon--ok" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M9.2 16.4l-3.1-3.1a1 1 0 1 1 1.4-1.4l1.7 1.7 6-6a1 1 0 0 1 1.4 1.4l-7.4 7.4a1 1 0 0 1-1.4 0z"/></svg></div><div class="driver-home-stat-label">TỔNG CUỐC XE HOÀN THÀNH</div><div class="driver-home-stat-value">0</div></div></div></div><div class="driver-home-toggle-card"><span>Kích hoạt/Tắt nhận xe dịch vụ</span><button class="driver-home-toggle" type="button" aria-pressed="true" aria-label="Bật tắt nhận xe"><span class="driver-home-toggle-knob"></span></button></div></div>`;
+    box.querySelector('.user-summary-card__logout').onclick = (e) => {
+      e.stopPropagation();
       localStorage.removeItem('driver_user');
       localStorage.removeItem('token');
       localStorage.removeItem('driver_registered');
@@ -605,6 +605,14 @@ function render() {
       state.token = '';
       render();
     };
+
+    const serviceToggle = box.querySelector('.driver-home-toggle');
+    if (serviceToggle) {
+      serviceToggle.onclick = () => {
+        const nextPressed = serviceToggle.getAttribute('aria-pressed') !== 'true';
+        serviceToggle.setAttribute('aria-pressed', nextPressed ? 'true' : 'false');
+      };
+    }
     app.appendChild(box);
   }
 
