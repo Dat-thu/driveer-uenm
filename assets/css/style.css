@@ -682,128 +682,387 @@ button {
     margin: 8px 12px 12px
 }
 
-.user-summary-card {
+.user-summary-card--profile {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     background: #fff;
-    border-radius: 14px;
-    padding: 14px 16px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 6px 14px #0000000d;
-    margin-bottom: 12px;
-    transition: all .3s ease
+    border-radius: 20px;
+    padding: 14px;
+    border: 1px solid #eceff3;
+    box-shadow: 0 8px 20px #0000000a;
+    transition: all .2s ease
 }
 
-.user-summary-card--clickable {
+.user-summary-card--profile.user-summary-card--clickable {
     cursor: pointer
 }
 
-.user-summary-card--clickable:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px #00b14f26;
-    border-color: #00b14f
+.user-summary-card--profile.user-summary-card--clickable:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 18px #00000012
 }
 
-.user-summary-card--clickable:active {
-    transform: translateY(0)
-}
-
-.user-summary-card__avatar {
-    width: 48px;
-    height: 48px;
+.user-summary-card--profile .user-summary-card__avatar {
+    width: 74px;
+    height: 74px;
     border-radius: 999px;
-    background: linear-gradient(135deg, #00b14f, #0a8f43);
+    border: 2px solid #a9ddc0;
+    background: #ecf9f2;
     display: grid;
     place-items: center;
-    color: #fff;
+    color: #0ea55a;
     font-weight: 700;
-    font-size: 18px
+    font-size: 35px;
+    line-height: 1
 }
 
-.user-summary-card__info {
+.user-summary-card--profile .user-summary-card__info {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 2px
 }
 
-.user-summary-card__greeting {
-    font-size: 13px;
-    color: #64748b
+.user-summary-card--profile .user-summary-card__role {
+    font-size: 14px;
+    font-weight: 700;
+    color: #22b46f
 }
 
-.user-summary-card__name {
-    font-size: 16px;
-    color: #111827
+.user-summary-card--profile .user-summary-card__name {
+    font-size: 17px;
+    line-height: 1.2;
+    color: #111827;
+    font-weight: 700
 }
 
-.user-summary-card__phone {
-    font-size: 13px;
-    color: #475569
+.user-summary-card--profile .user-summary-card__phone {
+    font-size: 18px;
+    font-weight: 500;
+    color: #77818f;
+    line-height: 1.2;
+    letter-spacing: 0;
+    font-variant-numeric: tabular-nums;
+    word-break: break-word
 }
 
-.user-summary-card__hint {
-    font-size: 11px;
-    color: #00b14f;
-    font-weight: 600;
-    margin-top: 4px;
-    animation: pulse 2s infinite
+.user-summary-card--profile .user-summary-card__logout {
+    flex: none;
+    width: 45px;
+    height: 45px;
+    border-radius: 14px;
+    border: 0;
+    background: #f8eaea;
+    color: #d64a43;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: all .2s ease
 }
 
-@keyframes pulse {
+.user-summary-card--profile .user-summary-card__logout:hover {
+    background: #f3dfdf
+}
 
-    0%,
-    to {
-        opacity: 1
+.user-summary-card--profile .user-summary-card__logout:active {
+    transform: scale(.98)
+}
+
+@media (max-width: 480px) {
+    .user-summary-card--profile {
+        padding: 13px;
+        border-radius: 18px;
+        gap: 12px
     }
 
-    50% {
-        opacity: .6
+    .user-summary-card--profile .user-summary-card__avatar {
+        width: 64px;
+        height: 64px;
+        font-size: 38px
+    }
+
+    .user-summary-card--profile .user-summary-card__role {
+        font-size: 13px
+    }
+
+    .user-summary-card--profile .user-summary-card__name {
+        font-size: 16px
+    }
+
+    .user-summary-card--profile .user-summary-card__phone {
+        font-size: 16px
+    }
+
+    .user-summary-card--profile .user-summary-card__logout {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px
     }
 }
 
-.main-action-btn {
-    width: 100%;
+.driver-home-panel {
+    margin-top: 8px;
+    display: grid;
+    gap: 8px
+}
+
+.driver-home-action-card,
+.driver-home-stats-card,
+.driver-home-toggle-card {
     background: #fff;
-    border: 2px solid #00b14f;
-    border-radius: 12px;
-    padding: 14px 16px;
+    border-radius: 16px;
+    border: 1px solid #e8edf0;
+    box-shadow: 0 8px 18px #0000000a
+}
+
+.driver-home-action-card {
+    min-height: 74px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between
+}
+
+.driver-home-action-left {
+    display: flex;
+    align-items: center;
+    gap: 8px
+}
+
+.driver-home-action-left--stack {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px
+}
+
+.driver-home-action-title {
+    font-size: 16px;
+    line-height: 1.2;
+    color: #111827;
+    font-weight: 700
+}
+
+.driver-home-balance {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 0
+}
+
+.driver-home-balance strong {
+    color: #0f172a;
+    font-weight: 800
+}
+
+.driver-home-chevron {
+    color: #8a93a0;
+    font-size: 34px;
+    line-height: 1;
+    margin-left: 10px
+}
+
+.driver-home-phone-icon {
+    font-size: 16px;
+    line-height: 1
+}
+
+.driver-home-badge {
+    background: #51c56a;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+    padding: 6px 11px;
+    border-radius: 10px;
+    box-shadow: 0 3px 8px #51c56a4d
+}
+
+.driver-home-stats-card {
+    padding: 0 14px 12px;
+    overflow: hidden
+}
+
+.driver-home-stats-topline {
+    display: block;
+    height: 4px;
+    margin: 0 -14px 10px;
+    background: linear-gradient(90deg, #4f67ea, #c54fd7)
+}
+
+.driver-home-stats-card h3 {
+    margin: 0 0 10px;
+    color: #0f172a;
+    font-size: 16px;
+    line-height: 1.2;
+    font-weight: 800;
+    text-transform: none
+}
+
+.driver-home-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1px 1fr;
+    align-items: center;
+    gap: 0
+}
+
+.driver-home-stat-divider {
+    background: #e2e8f0;
+    width: 1px;
+    height: 100%;
+    margin: 0 auto
+}
+
+.driver-home-stat-item {
+    text-align: center;
+    padding: 4px 6px 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center
+}
+
+.driver-home-stat-icon {
+    width: 50px;
+    height: 50px;
+    margin: 0 auto 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    cursor: pointer;
-    transition: all .2s ease;
-    box-shadow: 0 4px 12px #00b14f1a
+    border-radius: 999px
 }
 
-.main-action-btn:hover {
-    background: #f0fdf4;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px #00b14f26
+.driver-home-stat-icon svg {
+    width: 30px;
+    height: 30px;
+    display: block
 }
 
-.main-action-btn__icon {
-    font-size: 18px
+.driver-home-stat-icon--trip {
+    background: #eef2f7;
+    color: #334155
 }
 
-.main-action-btn__text {
+.driver-home-stat-icon--trip svg {
+    fill: currentColor
+}
+
+.driver-home-stat-icon--ok {
+    background: #59c66d;
+    color: #fff
+}
+
+.driver-home-stat-icon--ok svg {
+    fill: currentColor
+}
+
+.driver-home-stat-label {
+    color: #64748b;
+    font-size: 11px;
     font-weight: 700;
-    color: #00b14f;
-    font-size: 15px
+    letter-spacing: .2px;
+    line-height: 1.25;
+    text-transform: uppercase;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center
 }
 
-.main-action-btn--logout {
-    border-color: #ef4444;
-    margin-top: 8px
+.driver-home-stat-value {
+    margin-top: 4px;
+    color: #0f172a;
+    font-size: 46px;
+    line-height: 1;
+    font-weight: 800
 }
 
-.main-action-btn--logout:hover {
-    background: #fef2f2
+.driver-home-toggle-card {
+    min-height: 72px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px
 }
 
-.main-action-btn--logout .main-action-btn__text {
-    color: #ef4444
+.driver-home-toggle-card span {
+    color: #111827;
+    font-size: 14px;
+    line-height: 1.3;
+    font-weight: 700
+}
+
+.driver-home-toggle {
+    width: 48px;
+    height: 28px;
+    border-radius: 999px;
+    border: 0;
+    background: #cbd5e1;
+    padding: 2px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    cursor: pointer;
+    transition: background .2s ease
+}
+
+.driver-home-toggle[aria-pressed='true'] {
+    background: #15b76b;
+    justify-content: flex-end
+}
+
+.driver-home-toggle-knob {
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: 0 2px 6px #00000026;
+    display: block
+}
+
+@media (max-width: 480px) {
+    .driver-home-action-title,
+    .driver-home-stats-card h3 {
+        font-size: 15px
+    }
+
+    .driver-home-toggle-card span {
+        font-size: 13px
+    }
+
+    .driver-home-stat-icon {
+        width: 44px;
+        height: 44px
+    }
+
+    .driver-home-stat-icon svg {
+        width: 24px;
+        height: 24px
+    }
+
+    .driver-home-stat-label {
+        font-size: 10px;
+        min-height: 48px
+    }
+
+    .driver-home-stat-value {
+        font-size: 38px
+    }
+
+    .driver-home-balance {
+        font-size: 11px
+    }
+
+    .driver-home-toggle {
+        width: 44px;
+        height: 26px
+    }
+
+    .driver-home-toggle-knob {
+        width: 20px;
+        height: 20px
+    }
 }
 
 .auth-box:before {
